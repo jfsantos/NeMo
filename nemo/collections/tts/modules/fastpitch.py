@@ -284,7 +284,7 @@ class FastPitchModule(NeuralModule):
         # Output FFT
         dec_out, _ = self.decoder(input=len_regulated, seq_lens=dec_lens)
         spect = self.proj(dec_out)
-        num_frames = durs_predicted.sum(axis=-1).int()
+        num_frames = durs_predicted.sum(axis=-1).to(torch.int32).unsqueeze(-1)
         return (
             spect,
             num_frames,
