@@ -401,7 +401,7 @@ class FastPitchModel(SpectrogramGenerator, Exportable):
             attn_hard_dur,
             pitch,
         ) = self.fastpitch(text=text)
-        return spect, num_frames, durs_predicted, log_durs_predicted, pitch_predicted
+        return spect.transpose(1, 2), num_frames
 
     @property
     def disabled_deployment_input_names(self):
@@ -411,4 +411,16 @@ class FastPitchModel(SpectrogramGenerator, Exportable):
     @property
     def disabled_deployment_output_names(self):
         """Implement this method to return a set of input names disabled for export"""
-        return set(["attn_soft", "pitch", "attn_logprob", "attn_hard", "attn_hard_dur",])
+        return set(
+            [
+                "attn_soft",
+                "pitch",
+                "attn_logprob",
+                "attn_hard",
+                "attn_hard_dur",
+                "durs_predicted",
+                "log_durs_predicted",
+                "pitch_predicted",
+            ]
+        )
+
