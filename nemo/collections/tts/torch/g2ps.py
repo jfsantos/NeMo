@@ -32,6 +32,7 @@ class BaseG2p(abc.ABC):
         text_preprocessing_func=lambda x: x,
         word_tokenize_func=lambda x: x,
         apply_to_oov_word=None,
+        phoneme_probability=1.0
     ):
         """Abstract class for creating an arbitrary module to convert grapheme words to phoneme sequences (or leave unchanged or use apply_to_oov_word).
         Args:
@@ -39,11 +40,13 @@ class BaseG2p(abc.ABC):
             text_preprocessing_func: Function for preprocessing raw text.
             word_tokenize_func: Function for tokenizing text to words.
             apply_to_oov_word: Function that will be applied to out of phoneme_dict word.
+            phoneme_probability: Probability of replacement of graphemes by phonemes.
         """
         self.phoneme_dict = phoneme_dict
         self.text_preprocessing_func = text_preprocessing_func
         self.word_tokenize_func = word_tokenize_func
         self.apply_to_oov_word = apply_to_oov_word
+        self.phoneme_probability = phoneme_probability
 
     @abc.abstractmethod
     def __call__(self, text: str) -> str:
@@ -60,6 +63,7 @@ class EnglishG2p(BaseG2p):
         ignore_ambiguous_words=True,
         heteronyms=None,
         encoding='latin-1',
+        phoneme_probability=1.0
     ):
         """English G2P module. This module converts words from grapheme to phoneme representation using phoneme_dict in CMU dict format.
         Optionally, it can ignore words which are heteronyms, ambiguous or marked as unchangeable by word_tokenize_func (see code for details).
@@ -94,8 +98,9 @@ class EnglishG2p(BaseG2p):
             text_preprocessing_func=text_preprocessing_func,
             word_tokenize_func=word_tokenize_func,
             apply_to_oov_word=apply_to_oov_word,
+            phoneme_probability=phoneme_probability
         )
-
+        self._rng = random.Random()
         self.ignore_ambiguous_words = ignore_ambiguous_words
         self.heteronyms = (
             set(self._parse_file_by_lines(heteronyms, encoding))
@@ -168,6 +173,9 @@ class EnglishG2p(BaseG2p):
         Returns parsed `word` and `status` as bool.
         `status` will be `False` if word wasn't handled, `True` otherwise.
         """
+
+        if self._rng.random() > self.phoneme_probability:
+            return word, False
 
         # punctuation
         if re.search("[a-zA-Z]", word) is None:

@@ -226,6 +226,7 @@ class EnglishPhonemesTokenizer(BaseTokenizer):
         sep='|',  # To be able to distinguish between 2/3 letters codes.
         add_blank_at=None,
         pad_with_space=False,
+        phoneme_probability=1.0
     ):
         """English phoneme-based tokenizer.
         Args:
@@ -242,6 +243,8 @@ class EnglishPhonemesTokenizer(BaseTokenizer):
             add_blank_at: Add blank to labels in the specified order ("last") or after tokens (any non None),
              if None then no blank in labels.
             pad_with_space: Whether to pad text with spaces at the beginning and at the end or not.
+            phoneme_probability: Probability of having a word converted to phonemes (otherwise, character representation is used).
+             If not 1.0, chars is set to True.
         """
 
         tokens = []
@@ -257,7 +260,7 @@ class EnglishPhonemesTokenizer(BaseTokenizer):
             vowels = [f'{p}{s}' for p, s in itertools.product(vowels, (0, 1, 2))]
         tokens.extend(vowels)
 
-        if chars:
+        if chars or phoneme_probability != 1.0:
             tokens.extend(string.ascii_lowercase)
 
         if apostrophe:
@@ -270,12 +273,16 @@ class EnglishPhonemesTokenizer(BaseTokenizer):
 
         super().__init__(tokens, oov=oov, sep=sep, add_blank_at=add_blank_at)
 
-        self.chars = chars
+        if phoneme_probability != 1.0:
+            self.chars = True
+        else:
+            self.chars = chars
         self.punct = punct
         self.stresses = stresses
         self.pad_with_space = pad_with_space
 
         self.g2p = g2p
+        self.g2p.phoneme_probability = phoneme_probability
 
     def encode(self, text):
         """See base class."""

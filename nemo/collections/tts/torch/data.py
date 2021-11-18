@@ -53,6 +53,7 @@ class TTSDataset(Dataset):
         text_normalizer: Optional[Union[Normalizer, Callable[[str], str]]] = None,
         text_normalizer_call_args: Optional[Dict] = None,
         text_tokenizer_pad_id: Optional[int] = None,
+        phoneme_probability: Optional[float] = None,
         sup_data_types: Optional[List[str]] = None,
         sup_data_path: Optional[Union[Path, str]] = None,
         max_duration: Optional[float] = None,
