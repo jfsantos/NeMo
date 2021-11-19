@@ -53,7 +53,6 @@ class TTSDataset(Dataset):
         text_normalizer: Optional[Union[Normalizer, Callable[[str], str]]] = None,
         text_normalizer_call_args: Optional[Dict] = None,
         text_tokenizer_pad_id: Optional[int] = None,
-        phoneme_probability: Optional[float] = None,
         sup_data_types: Optional[List[str]] = None,
         sup_data_path: Optional[Union[Path, str]] = None,
         max_duration: Optional[float] = None,
@@ -123,6 +122,7 @@ class TTSDataset(Dataset):
         self.text_normalizer_call_args = text_normalizer_call_args
 
         self.text_tokenizer = text_tokenizer
+        self.use_text_cache = True
 
         if isinstance(self.text_tokenizer, BaseTokenizer):
             self.text_tokenizer_pad_id = text_tokenizer.pad
@@ -136,6 +136,10 @@ class TTSDataset(Dataset):
 
             self.text_tokenizer_pad_id = text_tokenizer_pad_id
             self.tokens = tokens
+
+            if hasattr(self.text_tokenizer, "phoneme_probability"):
+                if self.text_tokenizer.phoneme_probability != 1.0:
+                    self.use_text_cache = False
 
         if isinstance(manifest_filepath, str):
             manifest_filepath = [manifest_filepath]
@@ -325,8 +329,13 @@ class TTSDataset(Dataset):
         features = self.featurizer.process(sample["audio_filepath"], trim=self.trim)
         audio, audio_length = features, torch.tensor(features.shape[0]).long()
 
-        text = torch.tensor(sample["text_tokens"]).long()
-        text_length = torch.tensor(len(sample["text_tokens"])).long()
+        if self.use_text_cache:
+            text = torch.tensor(sample["text_tokens"]).long()
+            text_length = torch.tensor(len(sample["text_tokens"])).long()
+        else:
+            tokenized = self.text_tokenizer.tokenize(sample["raw_text"])
+            text = torch.tensor(tokenized).long()
+            text_length = torch.tensor(len(tokenized)).long()
 
         log_mel, log_mel_length = None, None
         if LogMel in self.sup_data_types_set:

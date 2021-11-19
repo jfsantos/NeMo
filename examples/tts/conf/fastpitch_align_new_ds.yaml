@@ -61,6 +61,7 @@ model:
         sep: '|'
         add_blank_at: null
         pad_with_space: True
+        phoneme_probability: 1.0
         g2p:
           _target_: "nemo.collections.tts.torch.g2ps.EnglishG2p"
           phoneme_dict: ${phoneme_dict_path}
@@ -107,6 +108,7 @@ model:
         sep: '|'
         add_blank_at: null
         pad_with_space: True
+        phoneme_probability: 1.0
         g2p:
           _target_: "nemo.collections.tts.torch.g2ps.EnglishG2p"
           phoneme_dict: ${phoneme_dict_path}
