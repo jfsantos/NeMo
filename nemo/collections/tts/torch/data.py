@@ -142,11 +142,6 @@ class TTSDataset(Dataset):
             self.text_tokenizer_pad_id = text_tokenizer_pad_id
             self.tokens = tokens
 
-            if hasattr(self.text_tokenizer, "phoneme_probability"):
-                if self.text_tokenizer.phoneme_probability != 1.0:
-                    self.use_text_cache = False
-                    self.use_beta_binomial_interpolator = True
-
         if isinstance(manifest_filepath, str):
             manifest_filepath = [manifest_filepath]
         self.manifest_filepath = manifest_filepath
@@ -299,6 +294,12 @@ class TTSDataset(Dataset):
 
     def add_duration_prior(self, **kwargs):
         self.use_beta_binomial_interpolator = kwargs.pop('use_beta_binomial_interpolator', False)
+
+        # If using phoneme probability, override what is in kwargs since we need to use the interpolator
+        if hasattr(self.text_tokenizer, "phoneme_probability"):
+            if self.text_tokenizer.phoneme_probability != 1.0:
+                self.use_text_cache = False
+                self.use_beta_binomial_interpolator = True
 
         if self.use_beta_binomial_interpolator:
             self.beta_binomial_interpolator = BetaBinomialInterpolator()
