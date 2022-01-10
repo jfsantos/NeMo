@@ -261,6 +261,7 @@ class EnglishPhonemesTokenizer(BaseTokenizer):
         add_blank_at=None,
         pad_with_space=False,
         text_preprocessing_func=lambda text: english_text_preprocessing(text, lower=False),
+        phoneme_probability=1.0
     ):
         """English phoneme-based tokenizer.
         Args:
@@ -277,9 +278,8 @@ class EnglishPhonemesTokenizer(BaseTokenizer):
             add_blank_at: Add blank to labels in the specified order ("last") or after tokens (any non None),
              if None then no blank in labels.
             pad_with_space: Whether to pad text with spaces at the beginning and at the end or not.
-            text_preprocessing_func: Text preprocessing function for correct execution of the tokenizer.
-             Basically, it replaces all non-unicode characters with unicode ones.
-             Note that lower() function shouldn't applied here, because text can contains phonemes (it will be handled by g2p).
+            phoneme_probability: Probability of having a word converted to phonemes (otherwise, character representation is used).
+             If not 1.0, chars is set to True.
         """
 
         tokens = []
@@ -295,7 +295,7 @@ class EnglishPhonemesTokenizer(BaseTokenizer):
             vowels = [f'{p}{s}' for p, s in itertools.product(vowels, (0, 1, 2))]
         tokens.extend(vowels)
 
-        if chars:
+        if chars or phoneme_probability != 1.0:
             tokens.extend(string.ascii_lowercase)
 
         if apostrophe:
@@ -308,13 +308,17 @@ class EnglishPhonemesTokenizer(BaseTokenizer):
 
         super().__init__(tokens, oov=oov, sep=sep, add_blank_at=add_blank_at)
 
-        self.chars = chars
+        if phoneme_probability != 1.0:
+            self.chars = True
+        else:
+            self.chars = chars
         self.punct = punct
         self.stresses = stresses
         self.pad_with_space = pad_with_space
 
         self.text_preprocessing_func = text_preprocessing_func
         self.g2p = g2p
+        self.g2p.phoneme_probability = phoneme_probability
 
     def encode(self, text):
         """See base class."""

@@ -131,6 +131,7 @@ class TTSDataset(Dataset):
         )
 
         self.text_tokenizer = text_tokenizer
+        self.use_text_cache = True
 
         if isinstance(self.text_tokenizer, BaseTokenizer):
             self.text_tokenizer_pad_id = text_tokenizer.pad
@@ -300,6 +301,12 @@ class TTSDataset(Dataset):
     def add_align_prior_matrix(self, **kwargs):
         self.use_beta_binomial_interpolator = kwargs.pop('use_beta_binomial_interpolator', False)
 
+        # If using phoneme probability, override what is in kwargs since we need to use the interpolator
+        if hasattr(self.text_tokenizer, "phoneme_probability"):
+            if self.text_tokenizer.phoneme_probability != 1.0:
+                self.use_text_cache = False
+                self.use_beta_binomial_interpolator = True
+
         if self.use_beta_binomial_interpolator:
             self.beta_binomial_interpolator = BetaBinomialInterpolator()
 
@@ -338,8 +345,13 @@ class TTSDataset(Dataset):
         features = self.featurizer.process(sample["audio_filepath"], trim=self.trim)
         audio, audio_length = features, torch.tensor(features.shape[0]).long()
 
-        text = torch.tensor(sample["text_tokens"]).long()
-        text_length = torch.tensor(len(sample["text_tokens"])).long()
+        if self.use_text_cache:
+            text = torch.tensor(sample["text_tokens"]).long()
+            text_length = torch.tensor(len(sample["text_tokens"])).long()
+        else:
+            tokenized = self.text_tokenizer.tokenize(sample["raw_text"])
+            text = torch.tensor(tokenized).long()
+            text_length = torch.tensor(len(tokenized)).long()
 
         log_mel, log_mel_length = None, None
         if LogMel in self.sup_data_types_set:
